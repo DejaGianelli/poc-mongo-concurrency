@@ -10,8 +10,10 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StopWatch;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,19 +28,58 @@ public class Worker {
 
     private final AtomicLong count = new AtomicLong(0L);
 
+    private final StopWatch watch = new StopWatch();
+
     @Autowired
     public Worker(MongoTemplate mongoTemplate) {
         this.mongoTemplate = mongoTemplate;
     }
 
+    @Async("taskExecutor")
     @Scheduled(initialDelay = 100)
-    @Scheduled(initialDelay = 150)
-    @Scheduled(initialDelay = 300)
-    private void processBulk() throws InterruptedException {
+    public void process1() throws InterruptedException {
+        startWatch();
+        processBulk();
+        stopWatch();
+    }
+
+    @Async("taskExecutor")
+    @Scheduled(initialDelay = 100)
+    public void process2() throws InterruptedException {
+        startWatch();
+        processBulk();
+        stopWatch();
+    }
+
+    @Async("taskExecutor")
+    @Scheduled(initialDelay = 100)
+    public void process3() throws InterruptedException {
+        startWatch();
+        processBulk();
+        stopWatch();
+    }
+
+    @Async("taskExecutor")
+    @Scheduled(initialDelay = 100)
+    public void process4() throws InterruptedException {
+        startWatch();
+        processBulk();
+        stopWatch();
+    }
+
+    @Async("taskExecutor")
+    @Scheduled(initialDelay = 100)
+    public void process5() throws InterruptedException {
+        startWatch();
+        processBulk();
+        stopWatch();
+    }
+
+    public void processBulk() throws InterruptedException {
 
         LocalDateTime now = LocalDateTime.now();
         long timeoutMin = 5; // 5 minutes
-        int limit = 10;
+        int limit = 50;
 
         Query query = new Query(Criteria.where("status").is("pending"));
         query.limit(limit);
@@ -92,7 +133,7 @@ public class Worker {
         log.info("Total: {}", count.intValue());
     }
 
-    //    @Scheduled(fixedDelay = 1000, initialDelay = 100)
+//    @Scheduled(fixedDelay = 1000, initialDelay = 100)
 //    @Scheduled(fixedDelay = 1000, initialDelay = 100)
 //    @Scheduled(fixedDelay = 1000, initialDelay = 100)
     private void process() {
@@ -158,5 +199,18 @@ public class Worker {
                 .set("status", "done")
                 .unset("lockedAt");
         mongoTemplate.updateFirst(query, update, Person.class);
+    }
+
+    private void startWatch() {
+        if (!watch.isRunning()) {
+            watch.start();
+        }
+    }
+
+    private void stopWatch() {
+        if (watch.isRunning()) {
+            watch.stop();
+            log.info("Time: {} ms", watch.getTotalTimeMillis());
+        }
     }
 }
